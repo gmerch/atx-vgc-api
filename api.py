@@ -12,6 +12,11 @@ app = flask.Flask(__name__)
 app.config['DEBUG'] = False
 CORS(app)
 
+
+@app.route('/',methods=['GET'])
+def get_home():
+    return 'Hello World! Welcome to this api'
+
 @app.route('/users',methods=['GET'])
 def get_users():    
     return flask.jsonify(users)
