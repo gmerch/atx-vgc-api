@@ -1,45 +1,91 @@
-import flask
-import json
+from flask import Flask, jsonify, request
+from flask_restful import Resource, Api, reqparse
+from sqlalchemy import create_engine
 from flask_cors import CORS
 
+e = create_engine('sqlite:///db/friendlies.db')
 
-with open('users.json','r') as fp:
-    users = json.load(fp)
-with  open('games.json','r') as fp:
-    games = json.load(fp)
-
-app = flask.Flask(__name__)
-app.config['DEBUG'] = False
+app = Flask(__name__)
+api = Api(app)
 CORS(app)
 
+class Battlers_Meta(Resource):
+    def get(self):
+        conn = e.connect()
+        query = conn.execute('select * from battlers;')
+        return {
+            'battlers': [
+                {
+                    'username':a[0],
+                    'twitter': a[1],
+                    'twitch': a[2]
+                }
+                for a in query.cursor.fetchall()
+            ]
+        }
 
-@app.route('/',methods=['GET'])
-def get_home():
-    return 'Hello World! Welcome to this api'
+class Games_Meta(Resource):
+    def get(self):
+        conn = e.connect()
+        query = conn.execute("""SELECT game_id, format, series, battlers.display_name, youtube_link 
+FROM games INNER JOIN battlers ON games.winner = battlers.battler_id;""")
+        return {
+            'games': [
+                {
+                    'game_id': a[0],
+                    'format': a[1],
+                    'series': a[2],
+                    'winner': a[3],
+                    'youtube': a[4]
+                } 
+                for a in query.cursor.fetchall()
+            ]
+        }
+class Game_Battler_Pokemon(Resource):
+    def get(self):
+        conn = e.connect()
+        game_id = request.args.get('game_id')
+        battler_id = request.args.get('battler_id')
+        query = conn.execute(f"""SELECT b.display_name, p.pokemon_name
+        
+FROM battler_game_pokemon bgp
+INNER JOIN battlers b ON bgp.battler_id = b.battler_id
+INNER JOIN pokemon p ON bgp.pokemon_id = p.pokemon_id
+WHERE bgp.game_id == {game_id} and bgp.battler_id = {battler_id};
+""")
+        res = query.cursor.fetchall()
+        return res
 
-@app.route('/users',methods=['GET'])
-def get_users():    
-    return flask.jsonify(users)
+class MainTable(Resource):
+    def get(self):
+        conn = e.connect()
+        query = conn.execute("""
+            SELECT bt.display_name, a.wins, b.games_played, 1.0*a.wins/b.games_played as WinPct
+            FROM
+            (
+	            SELECT winner, count(*) as wins
+	            FROM games
+	            GROUP BY winner
+            ) a 
+            INNER JOIN (
+	            SELECT battler_id, count(*) as games_played
+	            FROM(
+		            SELECT battler_id, game_id 
+		            FROM battler_game_pokemon 
+		            GROUP BY battler_id, game_id
+	            )
+	            GROUP BY battler_id
+            ) b 
+            ON a.winner = b.battler_id
+            INNER JOIN battlers bt ON a.winner = bt.battler_id""")
+        return [
+            {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':a[3]}
+            for a in query.cursor.fetchall()
+        ]
 
-@app.route('/games',methods=['GET'])
-def get_games():
-    return flask.jsonify(games)
-
-@app.route('/table',methods=['GET'])
-def get_table():
-    data = []
-    for user in users:
-        name = user['name']
-        wins = games_won(user['id'], games)
-        gp = games_played(user['id'], games)
-        pct = f'{wins/gp*100:.1f}%'
-        data.append({'name':name,'wins':wins,'games_played':gp,'win_%':pct})
-    return flask.jsonify(data)
-def games_played(pid, json):
-    return len([a for a in json if pid in [b['id'] for b in a['competitors']]])
-    
-def games_won(pid,json):
-    return len([a for a in json if pid == a['winner']])
-
+api.add_resource(Battlers_Meta, '/api/v1/battlers')
+api.add_resource(Games_Meta, '/api/v1/games')
+api.add_resource(Game_Battler_Pokemon, '/api/v1/pokemon_by_user_by_game')
+api.add_resource(MainTable, '/api/v1/table')
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
