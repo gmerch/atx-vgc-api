@@ -78,8 +78,8 @@ class MainTable(Resource):
             ) b 
             ON a.winner = b.battler_id
             INNER JOIN battlers bt ON a.winner = bt.battler_id""")
-    return [
-            {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':f"{100*a[3]:.1f}%"}
+        return [
+            {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':f'{100*a[3]:.1f}%'}
             for a in query.cursor.fetchall()
         ]
 
