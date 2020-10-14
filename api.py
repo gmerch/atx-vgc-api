@@ -128,7 +128,7 @@ class MainTable(Resource):
             INNER JOIN players p ON a.winner = p.pid
             ORDER BY 1.0*a.wins/b.games_played DESC, b.Games_played DESC""")
         return [
-            {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':f'{100*a[3]:.1f}%'}
+            {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_pct':f'{100*a[3]:.1f}%'}
             for a in query.cursor.fetchall()
         ]
 
