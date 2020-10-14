@@ -8,17 +8,28 @@ e = create_engine('sqlite:///db/friendlies.db')
 app = Flask(__name__)
 api = Api(app)
 CORS(app)
+parser = reqparse.RequestParser()
+parser.add_argument('id')
 
-class Battlers_Meta(Resource):
-    def get(self):
+class Players(Resource):
+    def get(self, id=None):
+        data = parser.parse_args()
+        if not data['id']:
+            query_string = 'select * from players;'
+        else:
+            query_string = f"SELECT * FROM players WHERE pid = {data['id']}"
         conn = e.connect()
-        query = conn.execute('select * from battlers;')
+        query = conn.execute(query_string)
         return {
             'battlers': [
                 {
-                    'username':a[0],
-                    'twitter': a[1],
-                    'twitch': a[2]
+                    'pid':a[0],
+                    'display_name': a[1],
+                    'twitter': a[2],
+                    'twitch': a[3],
+                    'slug': a[4],
+                    'flag': a[5]
+
                 }
                 for a in query.cursor.fetchall()
             ]
@@ -115,7 +126,7 @@ class MainTable(Resource):
             for a in query.cursor.fetchall()
         ]
 
-api.add_resource(Battlers_Meta, '/api/v1/battlers')
+api.add_resource(Players, '/api/v1/players')
 api.add_resource(Games_Meta, '/api/v1/games')
 api.add_resource(Game_Battler_Pokemon, '/api/v1/pokemon_by_user_by_game')
 api.add_resource(MainTable, '/api/v1/table')
