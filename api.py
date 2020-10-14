@@ -38,8 +38,8 @@ class Players(Resource):
 class Games_Meta(Resource):
     def get(self):
         conn = e.connect()
-        query = conn.execute("""SELECT game_id, format, series, battlers.display_name, youtube_link 
-FROM games INNER JOIN battlers ON games.winner = battlers.battler_id;""")
+        query = conn.execute("""SELECT gid, format, series, display_name, youtube_link 
+FROM games INNER JOIN players ON winner = pid;""")
         return {
             'games': [
                 {
@@ -56,13 +56,13 @@ class Game_Battler_Pokemon(Resource):
     def get(self):
         conn = e.connect()
         game_id = request.args.get('game_id')
-        battler_id = request.args.get('battler_id')
+        battler_id = request.args.get('player_id')
         query = conn.execute(f"""
-            SELECT b.display_name, p.pokemon_name
-            FROM battler_game_pokemon bgp
-            INNER JOIN battlers b ON bgp.battler_id = b.battler_id
-            INNER JOIN pokemon p ON bgp.pokemon_id = p.pokemon_id
-            WHERE bgp.game_id == {game_id} and bgp.battler_id = {battler_id};
+            SELECT p.display_name, pk.pokemon_name
+            FROM g_p_p
+            INNER JOIN players b ON g_p_p.player_id = p.pid
+            INNER JOIN pokemon pk ON g_p_p.pokemon_id = p.pokemon_id
+            WHERE g_p_p.game_id == {game_id} and g_p_p.player_id = {player_id};
         """)
         res = query.cursor.fetchall()
         return res
