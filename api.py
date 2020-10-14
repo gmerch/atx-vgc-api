@@ -38,20 +38,26 @@ class Players(Resource):
 class Games_Meta(Resource):
     def get(self):
         conn = e.connect()
-        query = conn.execute("""SELECT gid, format, series, display_name, youtube_link 
-FROM games INNER JOIN players ON winner = pid;""")
-        return {
+        query = conn.execute("""SELECT gid, format, series, display_name, youtube_link, players
+FROM games 
+INNER JOIN players ON winner = pid
+INNER JOIN (SELECT game_id, group_concat(distinct(display_name)) as players
+FROM g_p_p INNER JOIN players on player_id = pid
+GROUP BY game_id) b on gid = b.game_id;""")
+        ret = {
             'games': [
                 {
                     'game_id': a[0],
                     'format': a[1],
                     'series': a[2],
                     'winner': a[3],
-                    'youtube': a[4]
+                    'youtube': a[4],
+                    'players': a[5].split(',')
                 } 
                 for a in query.cursor.fetchall()
             ]
         }
+        return ret
 class Game_Battler_Pokemon(Resource):
     def get(self):
         conn = e.connect()
