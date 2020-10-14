@@ -109,7 +109,7 @@ class MainTable(Resource):
             ) b 
             ON a.winner = b.battler_id
             INNER JOIN battlers bt ON a.winner = bt.battler_id
-            ORDER BY WinPct DESC""")
+            ORDER BY 1.0*a.wins/b.games_played DESC, b.Games_played DESC""")
         return [
             {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':f'{100*a[3]:.1f}%'}
             for a in query.cursor.fetchall()
