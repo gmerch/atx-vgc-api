@@ -23,7 +23,7 @@ class Players(Resource):
         return {
             'battlers': [
                 {
-                    'pid':a[0],
+                    'id':a[0],
                     'display_name': a[1],
                     'twitter': a[2],
                     'twitch': a[3],
