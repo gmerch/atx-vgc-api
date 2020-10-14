@@ -84,12 +84,12 @@ class UsageStats(Resource):
             SELECT g.format, g.series,
                  p.pokemon_name,
 	             1.0*count(*)/(select 2*count(*) from games where series = {series}) as 'Usage'
-            FROM battler_game_pokemon  bgp
-            INNER JOIN games g on bgp.game_id = g.game_id
-            INNER JOIN pokemon p on bgp.pokemon_id = p.pokemon_id
+            FROM g_p_p
+            INNER JOIN games g on g_p_p.game_id = g.gid
+            INNER JOIN pokemon p on g_p_p.pokemon_id = p.pokemon_id
             where g.format = 'VGC2020'
             AND g.series = {series}
-            GROUP BY bgp.pokemon_id
+            GROUP BY g_p_p.pokemon_id
             ORDER BY Usage DESC;
         """)
         res = query.cursor.fetchall()
@@ -108,7 +108,7 @@ class MainTable(Resource):
     def get(self):
         conn = e.connect()
         query = conn.execute("""
-            SELECT bt.display_name, a.wins, b.games_played, 1.0*a.wins/b.games_played as WinPct
+            SELECT p.display_name, a.wins, b.games_played, 1.0*a.wins/b.games_played as WinPct
             FROM
             (
 	            SELECT winner, count(*) as wins
@@ -116,16 +116,16 @@ class MainTable(Resource):
 	            GROUP BY winner
             ) a 
             INNER JOIN (
-	            SELECT battler_id, count(*) as games_played
+	            SELECT player_id, count(*) as games_played
 	            FROM(
-		            SELECT battler_id, game_id 
-		            FROM battler_game_pokemon 
-		            GROUP BY battler_id, game_id
+		            SELECT player_id, game_id 
+		            FROM g_p_p 
+		            GROUP BY player_id, game_id
 	            )
-	            GROUP BY battler_id
+	            GROUP BY player_id
             ) b 
-            ON a.winner = b.battler_id
-            INNER JOIN battlers bt ON a.winner = bt.battler_id
+            ON a.winner = b.player_id
+            INNER JOIN players p ON a.winner = p.pid
             ORDER BY 1.0*a.wins/b.games_played DESC, b.Games_played DESC""")
         return [
             {'name': a[0], 'wins':a[1], 'games_played': a[2], 'win_%':f'{100*a[3]:.1f}%'}
