@@ -21,7 +21,7 @@ class Players(Resource):
         conn = e.connect()
         query = conn.execute(query_string)
         return {
-            'battlers': [
+            'players': [
                 {
                     'id':a[0],
                     'display_name': a[1],
