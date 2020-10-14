@@ -46,15 +46,46 @@ class Game_Battler_Pokemon(Resource):
         conn = e.connect()
         game_id = request.args.get('game_id')
         battler_id = request.args.get('battler_id')
-        query = conn.execute(f"""SELECT b.display_name, p.pokemon_name
-        
-FROM battler_game_pokemon bgp
-INNER JOIN battlers b ON bgp.battler_id = b.battler_id
-INNER JOIN pokemon p ON bgp.pokemon_id = p.pokemon_id
-WHERE bgp.game_id == {game_id} and bgp.battler_id = {battler_id};
-""")
+        query = conn.execute(f"""
+            SELECT b.display_name, p.pokemon_name
+            FROM battler_game_pokemon bgp
+            INNER JOIN battlers b ON bgp.battler_id = b.battler_id
+            INNER JOIN pokemon p ON bgp.pokemon_id = p.pokemon_id
+            WHERE bgp.game_id == {game_id} and bgp.battler_id = {battler_id};
+        """)
         res = query.cursor.fetchall()
         return res
+
+class UsageStats(Resource):
+    def get(self):
+        conn = e.connect()
+        series = request.args.get('series')
+        if not series:
+            # defaults to current series
+            series = 6
+        query = conn.execute(f"""
+            SELECT g.format, g.series,
+                 p.pokemon_name,
+	             1.0*count(*)/(select 2*count(*) from games where series = {series}) as 'Usage'
+            FROM battler_game_pokemon  bgp
+            INNER JOIN games g on bgp.game_id = g.game_id
+            INNER JOIN pokemon p on bgp.pokemon_id = p.pokemon_id
+            where g.format = 'VGC2020'
+            AND g.series = {series}
+            GROUP BY bgp.pokemon_id
+            ORDER BY Usage DESC;
+        """)
+        res = query.cursor.fetchall()
+        return {
+            'format': res[0][0],
+            'series': res[1][1],
+            'pokemon': [
+                {'name': a[2], 'usage': f'{100*a[3]:.1f}%'}
+                for a in res
+            ]
+            
+        }
+
 
 class MainTable(Resource):
     def get(self):
@@ -87,5 +118,6 @@ api.add_resource(Battlers_Meta, '/api/v1/battlers')
 api.add_resource(Games_Meta, '/api/v1/games')
 api.add_resource(Game_Battler_Pokemon, '/api/v1/pokemon_by_user_by_game')
 api.add_resource(MainTable, '/api/v1/table')
+api.add_resource(UsageStats, '/api/v1/usage')
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
