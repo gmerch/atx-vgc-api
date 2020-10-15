@@ -108,7 +108,7 @@ class MainTable(Resource):
     def get(self):
         conn = e.connect()
         query = conn.execute("""
-            SELECT p.pid, p.display_name, a.wins, b.games_played, 1.0*a.wins/b.games_played as WinPct
+            SELECT p.pid, p.display_name, a.wins, b.games_played, 1.0*a.wins/b.games_played as WinPct, p.twitter, p.twitch, p.flag_id
             FROM
             (
 	            SELECT winner, count(*) as wins
@@ -128,7 +128,7 @@ class MainTable(Resource):
             INNER JOIN players p ON a.winner = p.pid
             ORDER BY 1.0*a.wins/b.games_played DESC, b.Games_played DESC""")
         return [
-            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%'}
+            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7]}
             for a in query.cursor.fetchall()
         ]
 
