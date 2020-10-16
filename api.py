@@ -111,14 +111,22 @@ class MainTable(Resource):
     def get(self):
         conn = e.connect()
         query = conn.execute("""
-    SELECT p.pid, 
+        with ranked_games as (
+	SELECT g.*, ROW_NUMBER() OVER (PARTITION by pid ORDER BY gid DESC) as rn
+	FROM (SELECT pid, gid, youtube_link
+FROM players JOIN g_p_p ON pid = player_id
+join games ON gid = game_id) g
+	WHERE youtube_link != ''
+)
+SELECT p.pid, 
 	   p.display_name, 
 	   b.wins,
 	   a.games_played,
 	   1.0*b.wins / a.games_played as win_pct,
 	   p.twitter,
 	    p.twitch,
-	    p.flag_id
+	    p.flag_id,
+	    rg.youtube_link
     FROM
 	    (
 		    SELECT player_id, count(*) as games_played
@@ -137,11 +145,13 @@ class MainTable(Resource):
 	    ) b 
         ON b.winner = a.player_id
 	    INNER JOIN players p ON a.player_id = p.pid
+	    LEFT JOIN ranked_games rg on rg.pid = p.pid
+	    WHERE rn = 1 OR rn is NULL
 	    ORDER BY win_pct DESC,
 	    games_played DESC;
         """)
         return [
-            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7]}
+            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7], 'yt':a[8]}
             for a in query.cursor.fetchall()
         ]
 
