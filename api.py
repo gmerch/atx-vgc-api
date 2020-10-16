@@ -111,27 +111,35 @@ class MainTable(Resource):
     def get(self):
         conn = e.connect()
         query = conn.execute("""
-            SELECT p.pid, p.display_name, IFNULL(b.wins,0), a.games_played, 1.0*b.wins/a.games_played as WinPct, p.twitter, p.twitch, p.flag_id
-            FROM
-            	(
-	            SELECT player_id, count(*) as games_played
-	            FROM(
-		            SELECT player_id, game_id 
-		            FROM g_p_p 
-		            GROUP BY player_id, game_id
-	            )
-	            GROUP BY player_id
-	            
-            ) a 
-            LEFT JOIN (
-            SELECT winner, count(*) as wins
-	            FROM games
-	            GROUP BY winner
-            ) b 
-            ON b.winner = a.player_id
-            INNER JOIN players p ON a.player_id = p.pid
-            ORDER BY 1.0*b.wins/a.games_played DESC, a.Games_played DESC
-""")
+    SELECT p.pid, 
+	   p.display_name, 
+	   b.wins,
+	   a.games_played,
+	   1.0*b.wins / a.games_played as win_pct,
+	   p.twitter,
+	    p.twitch,
+	    p.flag_id
+    FROM
+	    (
+		    SELECT player_id, count(*) as games_played
+	  	    FROM (
+	  		    SELECT player_id, game_id 
+			    FROM g_p_p 
+			    GROUP BY player_id, game_id
+	  	    )
+	  	    GROUP BY player_id
+	    ) a
+	    LEFT JOIN (
+		    SELECT pid as winner, count(gid) as wins
+			from players LEFT JOIN games
+			ON players.pid = games.winner
+			GROUP BY pid
+	    ) b 
+        ON b.winner = a.player_id
+	    INNER JOIN players p ON a.player_id = p.pid
+	    ORDER BY win_pct DESC,
+	    games_played DESC;
+        """)
         return [
             {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7]}
             for a in query.cursor.fetchall()
