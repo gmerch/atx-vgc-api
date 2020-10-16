@@ -103,6 +103,9 @@ class UsageStats(Resource):
             
         }
 
+class Home(Resource):
+    def get(self):
+        return "Hello! We'll eventually make some documentation here :) "
 
 class MainTable(Resource):
     def get(self):
@@ -137,5 +140,6 @@ api.add_resource(Games_Meta, '/api/v1/games')
 api.add_resource(Game_Battler_Pokemon, '/api/v1/pokemon_by_user_by_game')
 api.add_resource(MainTable, '/api/v1/table')
 api.add_resource(UsageStats, '/api/v1/usage')
+api.add_resource(Home, '/api/v1/docs')
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
