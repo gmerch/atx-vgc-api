@@ -152,7 +152,7 @@ SELECT p.pid,
 	    win_pct DESC;
         """)
         return [
-            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7], 'yt':a[8], 'points':a[9]}
+            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7], 'yt':a[8], 'points':max(a[9],0)}
             for a in query.cursor.fetchall()
         ]
 
