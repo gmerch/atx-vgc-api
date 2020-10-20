@@ -126,7 +126,8 @@ SELECT p.pid,
 	   p.twitter,
 	    p.twitch,
 	    p.flag_id,
-	    rg.youtube_link
+	    rg.youtube_link,
+        b.wins*10 - (a.games_played-b.wins)*4 as points
     FROM
 	    (
 		    SELECT player_id, count(*) as games_played
@@ -147,11 +148,11 @@ SELECT p.pid,
 	    INNER JOIN players p ON a.player_id = p.pid
 	    LEFT JOIN ranked_games rg on rg.pid = p.pid
 	    WHERE rn = 1 OR rn is NULL
-	    ORDER BY win_pct DESC,
-	    games_played DESC;
+	    ORDER BY points DESC,
+	    win_pct DESC;
         """)
         return [
-            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7], 'yt':a[8]}
+            {'id':a[0],'name': a[1], 'wins':a[2], 'games_played': a[3], 'win_pct':f'{100*a[4]:.1f}%', 'twitter': a[5], 'twitch': a[6], 'flag':a[7], 'yt':a[8], 'points':a[9]}
             for a in query.cursor.fetchall()
         ]
 
