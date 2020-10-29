@@ -12,13 +12,13 @@ CORS(app)
 parser = reqparse.RequestParser()
 parser.add_argument('id')
 
-@app.route('/api/v1/replays2')
+@app.route('/api/v1/replays')
 def get_replay():
     data = parser.parse_args()
     if not data['id']:
         return '<html></html>'
     else:
-        file = [a for a in os.listdir('templates') if a.lower()find(data['id'])==0][0]
+        file = [a for a in os.listdir('templates') if a.lower().find(data['id'])==0][0]
         with open('templates/'+file,'r') as fp:
             ret_string = fp.read()
         return ret_string
