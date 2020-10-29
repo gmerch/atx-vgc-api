@@ -18,7 +18,7 @@ def get_replay():
     if not data['id']:
         return '<html></html>'
     else:
-        file = [a for a in os.listdir('templates') if a.find(data['id'])==0][0]
+        file = [a for a in os.listdir('templates') if a.lower()find(data['id'])==0][0]
         with open('templates/'+file,'r') as fp:
             ret_string = fp.read()
         return ret_string
