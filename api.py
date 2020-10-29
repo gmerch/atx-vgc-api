@@ -1,7 +1,8 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Markup
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
 from flask_cors import CORS
+import os
 
 e = create_engine('sqlite:///db/friendlies.db')
 
@@ -10,6 +11,30 @@ api = Api(app)
 CORS(app)
 parser = reqparse.RequestParser()
 parser.add_argument('id')
+
+@app.route('/api/v1/replays2')
+def get_replay():
+    data = parser.parse_args()
+    if not data['id']:
+        return '<html></html>'
+    else:
+        file = [a for a in os.listdir('templates') if a.find(data['id'])==0][0]
+        with open('templates/'+file,'r') as fp:
+            ret_string = fp.read()
+        return ret_string
+    
+class Replays(Resource):
+    def get(self, id=None):
+        data = parser.parse_args()
+        if not data['id']:
+            return '<html></html>'
+        else:
+            file = [a for a in os.listdir('templates') if a.find(data['id'])==0][0]
+            with open('templates/'+file,'r') as fp:
+                ret_string = fp.read()
+            return Markup(ret_string[1:-1])
+
+
 
 class Players(Resource):
     def get(self, id=None):
@@ -162,5 +187,6 @@ api.add_resource(Game_Battler_Pokemon, '/api/v1/pokemon_by_user_by_game')
 api.add_resource(MainTable, '/api/v1/table')
 api.add_resource(UsageStats, '/api/v1/usage')
 api.add_resource(Home, '/api/v1/docs')
+api.add_resource(Replays, '/api/v1/replay')
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
