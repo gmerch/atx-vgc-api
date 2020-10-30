@@ -12,7 +12,11 @@ CORS(app)
 parser = reqparse.RequestParser()
 parser.add_argument('id')
 
-@app.route('/api/v1/replays')
+@app.route('/api/v1/showdown_replay.js')
+def get_showdown_js():
+    with open('templates/showdown_replay.js','r') as fp:
+        return fp.read()
+@app.route('/api/v1/replay')
 def get_replay():
     data = parser.parse_args()
     if not data['id']:
