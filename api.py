@@ -22,14 +22,19 @@ parser = reqparse.RequestParser()
 parser.add_argument('id')
 
 
-@app.route('/api/v1/pasteparser/team_sprites', )
+@app.route('/api/v1/pasteparser/testing', methods=["GET", "PUT"])
+def test_view():
+    json_ = request.json
+    with open('templates/testing.json','w') as fp:
+        json.dump(json_, fp)
+    return jsonify(json_)
+
+@app.route('/api/v1/pasteparser/team_sprites', methods=["GET","PUT"])
 def get_team_image():
-    data = parser.parse_args()
-    if not data['id']:
-        return jsonify({'status code':'ERROR','msg':'No id argument'})
-    full_paste = 'https://pokepast.es/'+ data['id']
-    app.logger.warn(full_paste)
-    pp = PasteParser(full_paste)
+    json_ = request.json
+    paste = json_['paste']
+    app.logger.warn(paste)
+    pp = PasteParser(paste)
     pp.getPokemon()
     pp.generateMNFSprites('templates/','tmp_team')
     return send_file('templates/tmp_team.png', mimetype='image/png')
