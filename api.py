@@ -31,7 +31,6 @@ def test_view():
 
 @app.route('/api/v1/pasteparser/team_sprites', methods=["GET","POST"])
 def get_team_image():
-    if method
     json_ = request.json
     paste = json_['paste']
     app.logger.warn(paste)
