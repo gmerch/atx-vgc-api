@@ -22,15 +22,16 @@ parser = reqparse.RequestParser()
 parser.add_argument('id')
 
 
-@app.route('/api/v1/pasteparser/testing', methods=["GET", "PUT"])
+@app.route('/api/v1/pasteparser/testing', methods=["GET", "POST"])
 def test_view():
     json_ = request.json
     with open('templates/testing.json','w') as fp:
         json.dump(json_, fp)
     return jsonify(json_)
 
-@app.route('/api/v1/pasteparser/team_sprites', methods=["GET","PUT"])
+@app.route('/api/v1/pasteparser/team_sprites', methods=["GET","POST"])
 def get_team_image():
+    if method
     json_ = request.json
     paste = json_['paste']
     app.logger.warn(paste)
