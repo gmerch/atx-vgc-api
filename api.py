@@ -24,20 +24,19 @@ parser.add_argument('id')
 
 @app.route('/api/v1/pasteparser/testing', methods=["GET", "POST"])
 def test_view():
-    json_ = request.json
+    resp_ = request.args.get('responses')
     with open('templates/testing.json','w') as fp:
-        json.dump(json_, fp)
-    return jsonify(json_)
+        json.dump({resp_:''}, fp)
+    return jsonify({resp:''})
 
 @app.route('/api/v1/pasteparser/team_sprites', methods=["GET","POST"])
 def get_team_image():
-    json_ = request.json
-    paste = json_['paste']
-    app.logger.warn(paste)
+    paste = request.args.get('paste')
     pp = PasteParser(paste)
     pp.getPokemon()
     pp.generateMNFSprites('templates/','tmp_team')
     return send_file('templates/tmp_team.png', mimetype='image/png')
+    
 
     
 
