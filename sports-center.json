@@ -1,0 +1,25 @@
+{
+    "round-details": {
+        "round_no": 1,
+        "battle_no": 1,
+        "left-battler": "Gemz",
+        "right-battler": "Tiki",
+        "left-wins": 0,
+        "right-wins": 0
+    },
+    "players-to-watch": [
+        {
+            "player_id": "UNREALITY",
+            "set_wins": 1,
+            "set_losses": 0,
+            "set-game-wins": 2,
+            "set-game-losses": 0
+        }
+    ],
+    "advancing-to-top-cut":[
+
+    ],
+    "on-the-bubble":[
+
+    ]
+}

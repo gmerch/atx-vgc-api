@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, Markup
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
 from flask_cors import CORS
+import json
 import os
 
 e = create_engine('sqlite:///db/friendlies.db')
@@ -26,7 +27,12 @@ def get_replay():
         with open('templates/'+file,'r') as fp:
             ret_string = fp.read()
         return ret_string
-    
+
+@app.route('/api/v1/sports-center')
+def get_sports_center():
+    with open('sports-center.json','r') as fp:
+        return json.load(fp)
+
 class Replays(Resource):
     def get(self, id=None):
         data = parser.parse_args()
