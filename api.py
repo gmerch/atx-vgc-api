@@ -1,9 +1,17 @@
-from flask import Flask, jsonify, request, Markup
+from flask import Flask, jsonify, request, Markup, send_file
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy import create_engine
 from flask_cors import CORS
 import json
 import os
+import sys
+from dotenv import load_dotenv
+
+
+load_dotenv()
+PACKAGE_PATH = os.getenv('PACKAGE_PATH')
+sys.path.append(PACKAGE_PATH)
+from pokedata.pasteparser import PasteParser
 
 e = create_engine('sqlite:///db/friendlies.db')
 
@@ -12,6 +20,21 @@ api = Api(app)
 CORS(app)
 parser = reqparse.RequestParser()
 parser.add_argument('id')
+
+
+@app.route('/api/v1/pasteparser/team_sprites', )
+def get_team_image():
+    data = parser.parse_args()
+    if not data['id']:
+        return jsonify({'status code':'ERROR','msg':'No id argument'})
+    full_paste = 'https://pokepast.es/'+ data['id']
+    app.logger.warn(full_paste)
+    pp = PasteParser(full_paste)
+    pp.getPokemon()
+    pp.generateMNFSprites('templates/','tmp_team')
+    return send_file('templates/tmp_team.png', mimetype='image/png')
+
+    
 
 @app.route('/api/v1/showdown_replay.js')
 def get_showdown_js():
@@ -31,7 +54,7 @@ def get_replay():
 @app.route('/api/v1/sports-center')
 def get_sports_center():
     with open('sports-center.json','r') as fp:
-        return json.load(fp)
+        return jsonify(json.load(fp))
 
 class Replays(Resource):
     def get(self, id=None):
