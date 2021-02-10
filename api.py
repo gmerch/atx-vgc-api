@@ -20,6 +20,7 @@ api = Api(app)
 CORS(app)
 parser = reqparse.RequestParser()
 parser.add_argument('id')
+parser.add_argument('pokemon')
 
 
 @app.route('/api/v1/pasteparser/testing', methods=["GET", "POST"])
@@ -71,10 +72,15 @@ class Replays(Resource):
             return Markup(ret_string[1:-1])
 
 class Pokemon(Resource):
-    def get(self,id=None):
+    def get(self,id=None, pokemon=None):
         data = parser.parse_args()
+        print(data.keys())
+        print(data)
         if not data['id']:
-            query_string = 'SELECT * from pokemon;'
+            if 'pokemon' not in data.keys():
+                query_string = 'SELECT * from pokemon;'
+            else:
+                query_string = f'SELECT * from pokemon WHERE pokemon_name LIKE "%{data["pokemon"]}%"'
         else:
             id = data['id']
             query_string = f'SELECT * from pokemon where pokemon_id="{id}"'
