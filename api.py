@@ -32,13 +32,12 @@ def test_view():
 @app.route('/api/v1/pasteparser/team_sprites', methods=["GET","POST"])
 def get_team_image():
     paste = request.args.get('paste')
-    pp = PasteParser(paste)
+    full_paste = 'https://pokepast.es/'+paste
+    pp = PasteParser(full_paste)
     pp.getPokemon()
     pp.generateMNFSprites('templates/','tmp_team')
     return send_file('templates/tmp_team.png', mimetype='image/png')
-    
 
-    
 
 @app.route('/api/v1/showdown_replay.js')
 def get_showdown_js():
@@ -71,6 +70,40 @@ class Replays(Resource):
                 ret_string = fp.read()
             return Markup(ret_string[1:-1])
 
+class Pokemon(Resource):
+    def get(self,id=None):
+        data = parser.parse_args()
+        if not data['id']:
+            query_string = 'SELECT * from pokemon;'
+        else:
+            id = data['id']
+            query_string = f'SELECT * from pokemon where pokemon_id="{id}"'
+        print(query_string)
+        conn = e.connect()
+        query = conn.execute(query_string)
+        return {
+            'pokemon': [
+                {
+                    'id':a[0],
+                    'name': a[1]
+                }
+                for a in query.cursor.fetchall()
+            ]
+        }
+    def post(self):
+        id_ = request.json['pokemon_id']
+        name = request.json['pokemon']
+        query_string = f"INSERT INTO pokemon VALUES ({id_},{name});"
+        conn = e.connect()
+        conn.execute(query_string)
+        return {
+            'pokemon': [
+                {
+                    'id':id_,
+                    'name': name
+                }
+            ]
+        }
 
 
 class Players(Resource):
@@ -96,11 +129,33 @@ class Players(Resource):
                 for a in query.cursor.fetchall()
             ]
         }
+    def post(self):
+        req_type = request.json['req_type']
+        players = requets.json['players']
+        list_of_reqs = []
+        for player in players:
+            id_ = request.json['pid']
+            name = request.json['display_name']
+            twitter = request.json['twitter']
+            twitch = request.json['twitch']
+            slug = request.json['slug']
+            flag_id = request.json['flag_id']
+            vals = {'name':name, 'twitter':twitter,'twitch':twitch,'slug':slug,'flag_id':flag_id}
+            if req_type == 'UPDATE':
+                new_vals = {key:val for key,val in vals.items() if val is not None}
+                query_string = f"UPDATE players SET " + ", ".join([f"{key}={val}" for key,val in new_vals])[:-3] + f"WHERE pid = {id_}"
+            else:
+                query_string = f"INSERT INTO players VALUES ({id_},{name},{twitter},{twitch},{slug},{flag_id});"
+            conn = e.connect()
+            conn.execute(query_string)
+            list_of_reqs.append(query_string)
+        return {"request_type":req_type,"sql_statements":list_of_reqs}
+        
 
 class Games_Meta(Resource):
     def get(self):
         conn = e.connect()
-        query = conn.execute("""SELECT gid, format, series, display_name, youtube_link, players
+        query = conn.execute("""SELECT gid, format, series, display_name, youtube_link, players, game_date
 FROM games 
 INNER JOIN players ON winner = pid
 INNER JOIN (SELECT game_id, group_concat(distinct(display_name)) as players
@@ -114,26 +169,68 @@ GROUP BY game_id) b on gid = b.game_id;""")
                     'series': a[2],
                     'winner': a[3],
                     'youtube': a[4],
-                    'players': a[5].split(',')
+                    'players': a[5].split(','),
+                    'date': a[6]
                 } 
                 for a in query.cursor.fetchall()
             ]
         }
         return ret
+
+    def put(self):
+        req_type = request.json['req_type']
+        games = requets.json['games']
+        list_of_reqs
+        for game in games:
+            vals = {}
+            vals['gid'] = game['gid']
+            vals['format_'] = game['format']
+            vals['series'] = game['series']
+            vals['winner'] = game['winner']
+            vals['youtube'] = game['youtube']
+            vals['date'] = game['date']
+            if req_type == 'UPDATE':
+                new_vals = {key:val for key,val in vals if val is not None}
+                query_string = f"UPDATE games SET " + ", ".join([f"{key}={val}" for key,val in new_vals])[:-3] + f"WHERE gid = {vals['gid']}"
+            else:
+                querey_string = f"INSERT INTO games VALUES ({vals['gid']},{vals['format_']},{vals['series']},{vals['winner']},{vals['youtube']},{vals['date']})"
+            conn = e.connect()
+            conn.execute(query_string)
+            list_of_reqs.append(query_string)
+        return {"request_type":req_type,"sql_statements":list_of_reqs}
+
 class Game_Battler_Pokemon(Resource):
     def get(self):
         conn = e.connect()
-        game_id = request.args.get('game_id')
-        battler_id = request.args.get('player_id')
-        query = conn.execute(f"""
+        game_id = request.args.get('game_id',default=0)
+        battler_id = request.args.get('player_id',default=1)
+        query_str = f"""
             SELECT p.display_name, pk.pokemon_name
             FROM g_p_p
-            INNER JOIN players b ON g_p_p.player_id = p.pid
-            INNER JOIN pokemon pk ON g_p_p.pokemon_id = p.pokemon_id
-            WHERE g_p_p.game_id == {game_id} and g_p_p.player_id = {player_id};
-        """)
-        res = query.cursor.fetchall()
+            INNER JOIN players p ON g_p_p.player_id = p.pid
+            INNER JOIN pokemon pk ON g_p_p.pokemon_id = pk.pokemon_id
+            WHERE g_p_p.game_id = {game_id} and g_p_p.player_id = {battler_id};
+        """
+        query = conn.execute(query_str)
+        res = {'game':game_id,'pokemon':query.cursor.fetchall()}
         return res
+    def post(self):
+        conn = e.connect()
+        # INSSERT ONLY on this one
+        games = requets.json['games']
+        queries = []
+        for game in games:
+            vals = {}
+            val['game_id'] = games['game_id']
+            val['player_id'] = games['player_id']
+            val['pokemon'] = games['pokemon']
+            query_str = "INSERT INTO g_p_p VALUES "
+            for pokemon in val['pokemon']:
+                query_str += f"({val['game_id']},{val['player_id']},{val['pokemon']}),"
+            query_str = query_str[:-1]
+            conn.execute(query_str)
+            queries.append(query_str)
+        return {'queries':queries}
 
 class UsageStats(Resource):
     def get(self):
@@ -225,5 +322,6 @@ api.add_resource(MainTable, '/api/v1/table')
 api.add_resource(UsageStats, '/api/v1/usage')
 api.add_resource(Home, '/api/v1/docs')
 api.add_resource(Replays, '/api/v1/replay')
+api.add_resource(Pokemon, '/api/v1/pokemon')
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
