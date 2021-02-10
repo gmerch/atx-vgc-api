@@ -137,21 +137,22 @@ class Players(Resource):
         }
     def post(self):
         req_type = request.json['req_type']
-        players = requets.json['players']
+        players = request.json['players']
         list_of_reqs = []
         for player in players:
-            id_ = request.json['pid']
-            name = request.json['display_name']
-            twitter = request.json['twitter']
-            twitch = request.json['twitch']
-            slug = request.json['slug']
-            flag_id = request.json['flag_id']
+            print(player)
+            id_ = player['id']
+            name = player['display_name']
+            twitter = player['twitter']
+            twitch = player['twitch']
+            slug = player['slug']
+            flag_id = player['flag']
             vals = {'name':name, 'twitter':twitter,'twitch':twitch,'slug':slug,'flag_id':flag_id}
             if req_type == 'UPDATE':
                 new_vals = {key:val for key,val in vals.items() if val is not None}
                 query_string = f"UPDATE players SET " + ", ".join([f"{key}={val}" for key,val in new_vals])[:-3] + f"WHERE pid = {id_}"
             else:
-                query_string = f"INSERT INTO players VALUES ({id_},{name},{twitter},{twitch},{slug},{flag_id});"
+                query_string = f"INSERT INTO players VALUES ({id_},'{name}','{twitter}','{twitch}','{slug}',{flag_id});"
             conn = e.connect()
             conn.execute(query_string)
             list_of_reqs.append(query_string)
@@ -223,7 +224,7 @@ class Game_Battler_Pokemon(Resource):
     def post(self):
         conn = e.connect()
         # INSSERT ONLY on this one
-        games = requets.json['games']
+        games = request.json['games']
         queries = []
         for game in games:
             vals = {}
