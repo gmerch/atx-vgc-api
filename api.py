@@ -77,7 +77,7 @@ class Pokemon(Resource):
         print(data.keys())
         print(data)
         if not data['id']:
-            if 'pokemon' not in data.keys():
+            if data['pokemon'] is None:
                 query_string = 'SELECT * from pokemon;'
             else:
                 query_string = f'SELECT * from pokemon WHERE pokemon_name LIKE "%{data["pokemon"]}%"'
@@ -184,10 +184,10 @@ GROUP BY game_id) b on gid = b.game_id;""")
         }
         return ret
 
-    def put(self):
+    def post(self):
         req_type = request.json['req_type']
-        games = requets.json['games']
-        list_of_reqs
+        games = request.json['games']
+        list_of_reqs = []
         for game in games:
             vals = {}
             vals['gid'] = game['gid']
@@ -195,12 +195,16 @@ GROUP BY game_id) b on gid = b.game_id;""")
             vals['series'] = game['series']
             vals['winner'] = game['winner']
             vals['youtube'] = game['youtube']
+            if vals['youtube'] is not None:
+                vals['youtube'] = f"'{vals['youtube']}'"
+            else:
+                vals['youtube'] = 'null'
             vals['date'] = game['date']
             if req_type == 'UPDATE':
                 new_vals = {key:val for key,val in vals if val is not None}
                 query_string = f"UPDATE games SET " + ", ".join([f"{key}={val}" for key,val in new_vals])[:-3] + f"WHERE gid = {vals['gid']}"
             else:
-                querey_string = f"INSERT INTO games VALUES ({vals['gid']},{vals['format_']},{vals['series']},{vals['winner']},{vals['youtube']},{vals['date']})"
+                query_string = f"INSERT INTO games VALUES ({vals['gid']},'{vals['format_']}','{vals['series']}',{vals['winner']},{vals['youtube']},'{vals['date']}')"
             conn = e.connect()
             conn.execute(query_string)
             list_of_reqs.append(query_string)
