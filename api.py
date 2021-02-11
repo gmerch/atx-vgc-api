@@ -246,11 +246,13 @@ class UsageStats(Resource):
         series = request.args.get('series')
         if not series:
             # defaults to current series
-            series = 8
-        if series in [7,8]:
+            series = '8'
+        if series in ['7','8']:
             format_ = 'VGC2021'
         else:
             format_ = 'VGC2020'
+        print(type(series))
+        print(format_)
         query = conn.execute(f"""
             SELECT g.format, g.series,
                  p.pokemon_name,
@@ -258,11 +260,12 @@ class UsageStats(Resource):
             FROM g_p_p
             INNER JOIN games g on g_p_p.game_id = g.gid
             INNER JOIN pokemon p on g_p_p.pokemon_id = p.pokemon_id
-            where g.format = {format_}
+            where g.format = '{format_}'
             AND g.series = {series}
             GROUP BY g_p_p.pokemon_id
             ORDER BY Usage DESC;
         """)
+        
         res = query.cursor.fetchall()
         return {
             'format': res[0][0],
