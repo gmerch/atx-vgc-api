@@ -231,13 +231,10 @@ class Game_Battler_Pokemon(Resource):
         games = request.json['games']
         queries = []
         for game in games:
-            vals = {}
-            val['game_id'] = games['game_id']
-            val['player_id'] = games['player_id']
-            val['pokemon'] = games['pokemon']
+            print(game)
             query_str = "INSERT INTO g_p_p VALUES "
-            for pokemon in val['pokemon']:
-                query_str += f"({val['game_id']},{val['player_id']},{val['pokemon']}),"
+            for pokemon in game['pokemon']:
+                query_str += f"({game['game_id']},{game['player_id']},'{pokemon}'),"
             query_str = query_str[:-1]
             conn.execute(query_str)
             queries.append(query_str)
@@ -249,7 +246,11 @@ class UsageStats(Resource):
         series = request.args.get('series')
         if not series:
             # defaults to current series
-            series = 6
+            series = 8
+        if series in [7,8]:
+            format_ = 'VGC2021'
+        else:
+            format_ = 'VGC2020'
         query = conn.execute(f"""
             SELECT g.format, g.series,
                  p.pokemon_name,
@@ -257,7 +258,7 @@ class UsageStats(Resource):
             FROM g_p_p
             INNER JOIN games g on g_p_p.game_id = g.gid
             INNER JOIN pokemon p on g_p_p.pokemon_id = p.pokemon_id
-            where g.format = 'VGC2020'
+            where g.format = {format_}
             AND g.series = {series}
             GROUP BY g_p_p.pokemon_id
             ORDER BY Usage DESC;
